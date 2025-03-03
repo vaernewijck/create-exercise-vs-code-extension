@@ -1,6 +1,6 @@
-// The module 'vscode' contains the VS Code extensibility API
-// Import the module and reference it with the alias vscode in your code below
 const vscode = require('vscode');
+const fileGenerator = require('./src/file-generator');
+
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
@@ -9,26 +9,55 @@ const vscode = require('vscode');
  * @param {vscode.ExtensionContext} context
  */
 function activate(context) {
-
-	// Use the console to output diagnostic information (console.log) and errors (console.error)
-	// This line of code will only be executed once when your extension is activated
-	console.log('Congratulations, your extension "create-exercise" is now active!');
-
-	// The command has been defined in the package.json file
-	// Now provide the implementation of the command with  registerCommand
-	// The commandId parameter must match the command field in package.json
-	const disposable = vscode.commands.registerCommand('create-exercise.helloWorld', function () {
-		// The code you place here will be executed every time your command is executed
-
-		// Display a message box to the user
-		vscode.window.showInformationMessage('Hello World from create-exercise!');
-	});
-
+	const disposable = vscode.commands.registerCommand('starter-files-generator.createStarterFiles', createStarterFiles);
 	context.subscriptions.push(disposable);
 }
 
+async function createStarterFiles() {
+	const workspaceFolders = vscode.workspace.workspaceFolders;
+
+	if (!workspaceFolders) {
+		vscode.window.showErrorMessage('Please open a workspace first');
+		return;
+	}
+
+	// make sure to go to the root of the workspace
+	vscode.workspace.updateWorkspaceFolders(0, workspaceFolders.length, { uri: workspaceFolders[0].uri });
+
+	// get the root path
+	const rootPath = workspaceFolders[0].uri.fsPath;
+
+	// Ask for the project name
+	const projectName = await vscode.window.showInputBox({
+		prompt: 'Enter project name',
+		placeHolder: 'my-project',
+		validateInput: (value) => {
+			if (!value || value.trim() === '') {
+				return 'Project name cannot be empty';
+			}
+			if (!/^[a-zA-Z0-9-_]+$/.test(value)) {
+				return 'Project name can only contain letters, numbers, hyphens, and underscores';
+			}
+			return null;
+		}
+	});
+
+	if (!projectName) {
+		vscode.window.showErrorMessage('Project name is required');
+		return;
+	}
+
+	try {
+		await fileGenerator.generateFiles(rootPath, projectName);
+		vscode.window.showInformationMessage('Starter files created successfully!');
+	} catch (error) {
+		vscode.window.showErrorMessage(`Error creating starter files: ${error.message}`);
+	}
+}
+
+
 // This method is called when your extension is deactivated
-function deactivate() {}
+function deactivate() { }
 
 module.exports = {
 	activate,

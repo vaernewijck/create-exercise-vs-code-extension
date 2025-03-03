@@ -1,6 +1,6 @@
 {
-  "name": "create-exercise",
-  "displayName": "create-exercise",
+  "name": "quickstart",
+  "displayName": "quickstart",
   "description": "",
   "version": "0.0.1",
   "engines": {
@@ -12,10 +12,12 @@
   "activationEvents": [],
   "main": "./extension.js",
   "contributes": {
-    "commands": [{
-      "command": "create-exercise.helloWorld",
-      "title": "Hello World"
-    }]
+    "commands": [
+      {
+        "command": "starter-files-generator.createStarterFiles",
+        "title": "Devine: generate starter files"
+      }
+    ]
   },
   "scripts": {
     "lint": "eslint .",
