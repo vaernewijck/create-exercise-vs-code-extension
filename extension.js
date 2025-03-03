@@ -21,40 +21,55 @@ async function createStarterFiles() {
 		return;
 	}
 
-	// make sure to go to the root of the workspace
-	vscode.workspace.updateWorkspaceFolders(0, workspaceFolders.length, { uri: workspaceFolders[0].uri });
-
-	// get the root path
-	const rootPath = workspaceFolders[0].uri.fsPath;
-
-	// Ask for the project name
-	const projectName = await vscode.window.showInputBox({
-		prompt: 'Enter project name',
-		placeHolder: 'my-project',
-		validateInput: (value) => {
-			if (!value || value.trim() === '') {
-				return 'Project name cannot be empty';
-			}
-			if (!/^[a-zA-Z0-9-_]+$/.test(value)) {
-				return 'Project name can only contain letters, numbers, hyphens, and underscores';
-			}
-			return null;
-		}
-	});
-
-	if (!projectName) {
-		vscode.window.showErrorMessage('Project name is required');
-		return;
-	}
-
 	try {
-		await fileGenerator.generateFiles(rootPath, projectName);
-		vscode.window.showInformationMessage('Starter files created successfully!');
+		// First ask for target directory
+		const targetDirectory = await selectTargetDirectory(workspaceFolders[0].uri);
+		if (!targetDirectory) {
+			return; // User cancelled
+		}
+
+		// Then ask for project name
+		const projectName = await vscode.window.showInputBox({
+			prompt: 'Enter project name',
+			placeHolder: 'my-project',
+			validateInput: (value) => {
+				if (!value || value.trim() === '') {
+					return 'Project name cannot be empty';
+				}
+				if (!/^[a-zA-Z0-9-_]+$/.test(value)) {
+					return 'Project name can only contain letters, numbers, hyphens, and underscores';
+				}
+				return null;
+			}
+		});
+
+		if (!projectName) {
+			return; // User cancelled
+		}
+
+		await fileGenerator.generateFiles(targetDirectory.fsPath, projectName);
+		vscode.window.showInformationMessage(`Project "${projectName}" created successfully!`);
 	} catch (error) {
-		vscode.window.showErrorMessage(`Error creating starter files: ${error.message}`);
+		vscode.window.showErrorMessage(`Error creating project: ${error.message}`);
 	}
 }
 
+async function selectTargetDirectory(defaultUri) {
+	const options = {
+		canSelectFiles: false,
+		canSelectFolders: true,
+		canSelectMany: false,
+		openLabel: 'Select Target Directory',
+		defaultUri
+	};
+
+	const targetDirs = await vscode.window.showOpenDialog(options);
+	if (targetDirs && targetDirs.length > 0) {
+		return targetDirs[0];
+	}
+
+	return null;
+};
 
 // This method is called when your extension is deactivated
 function deactivate() { }
